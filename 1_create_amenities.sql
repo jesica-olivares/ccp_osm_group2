@@ -56,8 +56,8 @@ SET amenity_count_cafe = (
   AND amenities.amenity = 'cafe'
 );
 
---run multiples types
-CREATE OR REPLACE FUNCTION add_amenity_count_columns_from_list(amenities VARCHAR, column_count varchar)
+--run multiples types for point
+CREATE OR REPLACE FUNCTION add_point_count_columns_from_list(amenities VARCHAR, column_count varchar)
 RETURNS VOID AS $$
 DECLARE
   amenity_name text;
@@ -83,17 +83,50 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+--run multiples types for polygon
+CREATE OR REPLACE FUNCTION add_polygon_count_columns_from_list(amenities VARCHAR, column_count varchar)
+RETURNS VOID AS $$
+DECLARE
+  amenity_name text;
+  sql_query text;
+BEGIN
+  -- Split the input 'amenities' string into an array
+  FOREACH amenity_name IN ARRAY STRING_TO_ARRAY(amenities, ',') 
+  LOOP
+    -- Create a SQL query to add a column for the amenity count
+    sql_query := 'ALTER TABLE amenity_counts ADD COLUMN '|| column_count ||'_count_' || amenity_name || ' INT';
+
+    -- Execute the SQL query to add the column
+    EXECUTE sql_query;
+    -- Create a SQL query to update the amenity count
+    sql_query := 'UPDATE amenity_counts AS points SET '|| column_count ||'_count_' || amenity_name || ' = (
+      SELECT COUNT(*)
+      FROM planet_osm_polygon amenities
+      WHERE ST_DWithin(points.point_id, amenities.way, 500)
+      AND amenities.'|| column_count ||'= ' || quote_literal(amenity_name) || ')';
+    -- Execute the SQL query to update the count
+    EXECUTE sql_query;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
 select * from amenity_counts
 limit 10;
 
 --run the function to add fast_food,pub,bar
-SELECT add_amenity_count_columns_from_list('fast_food,pub,bar', 'amenity');
+SELECT add_point_count_columns_from_list('fast_food,pub,bar', 'amenity');
 
 --run the function to add multiple columns
-SELECT add_amenity_count_columns_from_list('bicycle_parking,parking_entrance,atm,charging_station,pharmacy,parking,taxi,bank,ice_cream,post_office,place_of_worship,fuel,theatre,nightclub,school,library,events_venue,arts_centre,car_rental,marketplace,cinema,ticket_validator,childcare,public_bookcase,studio','amenity');
+SELECT add_point_count_columns_from_list('bicycle_parking,parking_entrance,atm,charging_station,pharmacy,parking,taxi,bank,ice_cream,post_office,place_of_worship,fuel,theatre,nightclub,school,library,events_venue,arts_centre,car_rental,marketplace,cinema,ticket_validator,childcare,public_bookcase,studio','amenity');
 
 --run the function to add railway items
-SELECT add_amenity_count_columns_from_list('tram_stop,stop,subway_entrance,buffer_stop,crossing,station,train_station_entrance', 'railway');
+SELECT add_point_count_columns_from_list('tram_stop,stop,subway_entrance,buffer_stop,crossing,station,train_station_entrance', 'railway');
+
+--run the function to add buildings items
+SELECT add_polygon_count_columns_from_list('apartments,house', 'building');
+
+--run the function to add buildings items
+SELECT add_polygon_count_columns_from_list('detached,residential,shed,garage,terrace,allotment_house,semidetached_house,commercial,bungalow,roof,garages,industrial,retail,school,hut,office,service,carport,kindergarten,construction,hospital,church,university,warehouse,civic,hotel,greenhouse,dormitory,train_station,government,sports_centre,sports_hall,public,kiosk,parking,ruins,storage_tank,chapel,toilets,supermarket,container,bridge,electricity,farm_auxiliary,cabin,silo,fire_station', 'building');
 
 
 
