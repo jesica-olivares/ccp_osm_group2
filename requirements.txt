@@ -1,6 +1,11 @@
+catboost==1.2.2
+contextily==1.4.0
+GeoAlchemy2==0.14.2
 geopandas==0.14.0
+lightgbm==4.2.0
 matplotlib==3.5.3
 matplotlib==3.7.2
+numpy==1.26.3
 pandas==1.5.3
 pandas==2.0.3
 psycopg2==2.9.9
@@ -8,5 +13,7 @@ scikit_learn==1.3.0
 seaborn==0.13.0
 shap==0.43.0
 Shapely==2.0.2
+SQLAlchemy==2.0.23
 tensorflow==2.10.1
+verstack==3.8.16
 xgboost==2.0.2
