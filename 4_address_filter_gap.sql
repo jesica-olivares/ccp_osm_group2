@@ -1,29 +1,8 @@
 
 
-select * from planet_osm_polygon
-where building is not null
-limit 1000;
-
-
-select distinct amenity from planet_osm_polygon
-where building is not null
-and amenity is not null
-limit 1000;
-
-select count(*) from planet_osm_polygon
-where amenity='restaurant'
-
-select count(*) from planet_osm_point
-where amenity='restaurant'
-
 DROP TABLE IF EXISTS  filt_address;
 CREATE TABLE filt_address AS SELECT osm_id, building, way_area, way FROM planet_osm_polygon
 where building is not null;
---order by random()
---limit 1000000;
-
-select * from filt_address
-limit 10;
 
 
 CREATE OR REPLACE FUNCTION add_gap_to_address(amenities VARCHAR, column_count varchar)
@@ -63,6 +42,7 @@ CREATE TABLE filt_address_model AS SELECT osm_id, building, way_area, building_c
 
 select count(*) from filt_address_model;
 
+--run multiples types for point 200m
 CREATE OR REPLACE FUNCTION add_point_count_columns_from_list_200(amenities VARCHAR, column_count varchar)
 RETURNS VOID AS $$
 DECLARE
@@ -90,7 +70,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
+--run multiples types for polygon 200m
 CREATE OR REPLACE FUNCTION add_polygon_count_columns_from_list_200(amenities VARCHAR, column_count varchar)
 RETURNS VOID AS $$
 DECLARE
@@ -118,7 +98,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
+--run multiples types for point 500m
 CREATE OR REPLACE FUNCTION add_point_count_columns_from_list_500(amenities VARCHAR, column_count varchar)
 RETURNS VOID AS $$
 DECLARE
@@ -146,7 +126,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
+--run multiples types for polygon 500m
 CREATE OR REPLACE FUNCTION add_polygon_count_columns_from_list_500(amenities VARCHAR, column_count varchar)
 RETURNS VOID AS $$
 DECLARE
@@ -174,7 +154,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
+--run multiples types for point 10000m
 CREATE OR REPLACE FUNCTION add_point_count_columns_from_list_1000(amenities VARCHAR, column_count varchar)
 RETURNS VOID AS $$
 DECLARE
@@ -215,13 +195,11 @@ SELECT add_point_count_columns_from_list_500('picnic_table,playground,pitch,spor
 SELECT add_polygon_count_columns_from_list_500('apartments,residential,retail,kiosk,commercial,office,house,detached,roof,train_station,garage', 'building');
 
 
---47min
 SELECT add_point_count_columns_from_list_500('park', 'leisure');
 
 SELECT add_point_count_columns_from_list_500('firepit,slipway,outdoor_seating,garden', 'leisure');
 
 SELECT add_point_count_columns_from_list_500('marina,adult_gaming_centre,dance,,horse_riding,sauna,tanning_salon,water_park,park', 'leisure');
-
 
 SELECT add_point_count_columns_from_list_200('restaurant,cafe,fast_food,pub,bar,ice_cream', 'amenity');
 
@@ -240,64 +218,15 @@ SELECT add_polygon_count_columns_from_list_200('apartments,residential,retail,ki
 SELECT add_polygon_count_columns_from_list_200('house,detached', 'building');
 
 SELECT add_polygon_count_columns_from_list_200('roof,train_station', 'building');
---
-SELECT add_point_count_columns_from_list_1000('pharmacy,bank,bicycle_parking', 'amenity');
 
+SELECT add_point_count_columns_from_list_1000('pharmacy,bank,bicycle_parking', 'amenity');
 
 SELECT add_polygon_count_columns_from_list_200('garage', 'building') ;
 
 
---SELECT add_polygon_count_columns_from_list_200('retail,kiosk,commercial,office,house,detached,roof,train_station,garage,school,garages,shed,service,church,university,kindergarten', 'building');
-
-
-select * from filt_address_model
-limit 10;
-
-select * from filt_address_model_sample
-limit 100;
-
-drop table filt_address_model_sample;
-
-CREATE TABLE filt_address_model_sample AS 
-SELECT * FROM filt_address_model
-limit 10000;
-
 ALTER TABLE filt_address_model ADD COLUMN centroid GEOMETRY;
 UPDATE filt_address_model SET centroid = ST_PointOnSurface(way);
---0s.077ms
 
 ALTER TABLE planet_osm_polygon ADD COLUMN centroid GEOMETRY;
 UPDATE planet_osm_polygon SET centroid = ST_PointOnSurface(way);
---33m58s
-
---normal
-SELECT add_polygon_count_columns_from_list_500('apartments,residential', 'building');
---4m00s.652
-
-SELECT add_polygon_count_columns_from_list_500_cent('apartments,residential', 'building');
---1m14s.501
-
---ALTER TABLE filt_address_model_sample
---Drop column building_count_500_residential;
---Drop column building_count_500_apartments;
-
-ALTER TABLE filt_address_model
-drop column centroid;
-
---centroid
-SELECT add_polygon_count_columns_from_list_500('apartments,residential', 'building');
---2m.12s.566
-
-
-
-
-
-
-
-
---removed from the address count, based on the importance on the model
---',,,,terrace,allotment_house,semidetached_house,,bungalow,,,,,,hut,,,carport,,,hospital,,,warehouse,civic,,greenhouse,dormitory,,government,,,public,,parking,ruins,storage_tank,chapel,toilets,supermarket,container,bridge,electricity,farm_auxiliary,cabin,silo,fire_station'
---sports_hall,construction,sports_centre,hotel,industrial
---parking,place_of_worship,fuel,library,arts_centre,car_rental,ticket_validator,childcare,public_bookcase,studio
---,,,buffer_stop,,,train_station_entrance',
 
