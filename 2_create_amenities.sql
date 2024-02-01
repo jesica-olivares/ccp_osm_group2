@@ -138,16 +138,3 @@ SELECT add_polygon_count_columns_from_list('church,university,warehouse,civic,ho
 
 SELECT add_polygon_count_columns_from_list('supermarket,fire_station', 'building');
 
-
-
-
---,ruins,storage_tank,chapel,toilets,container,bridge,electricity,farm_auxiliary,cabin,silo,
-
-select * from amenity_counts_500
-limit 10;
-
-select count(*) from amenity_counts_500
-limit 10;	
-
-select * from planet_osm_polygon
-limit 10;
